@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <termios.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "datareader.h"
 #include "filewriter.h"
 
@@ -68,7 +70,7 @@ int main(){
   
   printf("%s\n\n\n", fpath);
   fflush(stdout);  
-
+  
   char nmwrt = 1;
   int colsiz = 1;
   //=========================Reconstruct data=====================
@@ -95,6 +97,80 @@ int main(){
   
   csvwrite(fpath, cols, colsiz, names, dat, nmwrt);
 
+  //===============Startup and portnumber=================
+  char * c = malloc(2);
+  c[0] = 0;
+  c[1] = 0;
+  
+  printf("Welcome to SBMDAQ 1.0.0, please enter a value between 0-9 of the COM (windows) or TTYACM (Ubuntu/MAC) port that you will be utilizing:\n");
+
+  while(1){
+    c[0] = getchar();
+    mpause(25);
+    //follow up with - 48 for ascii code adjust
+    if(c[0] - 48 >= 0 && c[0] - 48 < 10){
+      printf("\nOpening Port: %d\n", c[0] - 48);
+      break;
+    }
+    else{
+      printf("\nError in port number, please re-enter the value and make sure the value is between 0-9:\n");
+    }
+  }
+
+
+  //====================Opening Port=======================
+  char *portname = malloc(15);
+  int iter = 0;
+  for(;iter < 15; iter++){
+    portname[0] = 0;
+  }
+  int fd;
+  int wlen;
+  int exec = 0;
+  pid_t pid;
+  int status;
+  
+  strcat(portname, "/dev/ttyACM");
+  strcat(portname, c);
+
+  fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+  if (fd < 0) {
+    printf("Error opening %s: %s\n", portname, strerror(errno));
+    return -1;
+  }
+  free(portname);
+  free(c);
+
+  /*baudrate 115200, 8 bits, no parity, 1 stop bit */
+  configtty(fd, B115200);
+
+
+  //======================Start Handshake=================
+  char * hsbuf = malloc(2);
+  mpause(999);
+  mpause(999);
+  mpause(999);
+
+  printf("Init Handshake\n");
+  write(fd, "s", 1);  
+  
+  while(1){
+    printf("Querying\n");
+    fflush(stdout);
+    if(read(fd, hsbuf, 1)){
+      if(hsbuf[0] == 'b'){
+	printf("Sent and received from arduino, finishing handshake\n");
+	fflush(stdout);
+	write(fd, "m", 1);
+	break;
+      }
+    }
+  }
+  
+  csvappend(fpath, cols, colsiz, dat);
+  csvappend(fpath, cols, colsiz, dat);
+  csvappend(fpath, cols, colsiz, dat);
+  
   free(names);
   free(dat);
   free(fulltim);

@@ -45,6 +45,34 @@ void csvwrite(char * fpath, int ncols, int dlen, char ** names, int ** data, cha
   free(stmp);
   close(fd);  
 }
+
+/*===========================
+csvappend appends data onto an existing csv
+===========================*/
+void csvappend(char * fpath, int ncols, int dlen, int ** data){
+  int fd = open(fpath, O_CREAT | O_APPEND | O_RDWR, 0644);
+  int i = 0;
+
+  int r = 0;
+  int c = 0;
+  char * stmp = malloc(20);
+  for(r = 0; r < dlen; r++){
+    for(c = 0; c < ncols; c++){
+      sprintf(stmp, "%d", data[c][r]);
+      if(c < ncols - 1){
+	write(fd, stmp, strlen(stmp));
+	write(fd, ",", 1);
+      }
+      else{
+	write(fd, stmp, strlen(stmp));
+	write(fd, "\n", 1);
+      }
+    }
+  }  
+
+  free(stmp);
+  close(fd);  
+}
   
 void ezwrite(char * fpath, int ncols){
   int fd = open(fpath, O_CREAT | O_TRUNC | O_RDWR, 0644);
