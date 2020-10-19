@@ -16,8 +16,9 @@ void mpause(int millis){
   struct timespec ts, ts2;
   ts.tv_sec=0;
   ts.tv_nsec = millis * 1000000L;
-  printf("%d\n", nanosleep(&ts,&ts2));
-  printf("%d\n", errno);
+  nanosleep(&ts,&ts2);
+  //printf("%d\n", nanosleep(&ts,&ts2));
+  //printf("%d\n", errno);
 }
 
 /*=============================
@@ -97,26 +98,7 @@ int main(){
   
   csvwrite(fpath, cols, colsiz, names, dat, nmwrt);
 
-  //===============Startup and portnumber=================
-  char * c = malloc(2);
-  c[0] = 0;
-  c[1] = 0;
-  
   printf("Welcome to SBMDAQ 1.0.0, please enter a value between 0-9 of the COM (windows) or TTYACM (Ubuntu/MAC) port that you will be utilizing:\n");
-
-  while(1){
-    c[0] = getchar();
-    mpause(25);
-    //follow up with - 48 for ascii code adjust
-    if(c[0] - 48 >= 0 && c[0] - 48 < 10){
-      printf("\nOpening Port: %d\n", c[0] - 48);
-      break;
-    }
-    else{
-      printf("\nError in port number, please re-enter the value and make sure the value is between 0-9:\n");
-    }
-  }
-
 
   //====================Opening Port=======================
   char *portname = malloc(15);
@@ -124,26 +106,40 @@ int main(){
   for(;iter < 15; iter++){
     portname[0] = 0;
   }
-  int fd;
+  int * fdtests = malloc(10*sizeof(int));
+  int * fd = malloc(10*sizeof(int));
   int wlen;
   int exec = 0;
   pid_t pid;
   int status;
-  
+
   strcat(portname, "/dev/ttyACM");
-  strcat(portname, c);
+  portname[12] = 0;
 
-  fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-  if (fd < 0) {
-    printf("Error opening %s: %s\n", portname, strerror(errno));
-    return -1;
+  //=====SCAN FOR ALL OPEN PORTS, ASSIGN FILE DESCRIPTORS====
+  char c=48;
+  int i=0;
+  char opensuccess = 0;
+  char numopen = 0;
+  for(;i<10;i++){
+    portname[11]=c+i;
+    fdtests[i] = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+    if(fdtests[i]>0){
+      fd[numopen]=fdtests[i];
+      numopen = numopen + 1;
+      opensuccess = 1;
+    }
   }
+  
+  if(opensuccess=0){
+    printf("Error in scanning for ports\n");
+  }
+
+  printf("Number of connected subcontrollers:%d\n", numopen);
   free(portname);
-  free(c);
-
+  free(fdtests);
   /*baudrate 115200, 8 bits, no parity, 1 stop bit */
-  configtty(fd, B115200);
-
+  configtty(fd[0], B115200);
 
   //======================Start Handshake=================
   char * hsbuf = malloc(2);
@@ -151,21 +147,25 @@ int main(){
   mpause(999);
   mpause(999);
 
-  printf("Init Handshake\n");
-  write(fd, "s", 1);  
+  i = 0;
+  for(;i<numopen;i++){
+    printf("Init Handshake %d\n", i);
+    write(fd[i], "s", 1);  
   
-  while(1){
-    printf("Querying\n");
-    fflush(stdout);
-    if(read(fd, hsbuf, 1)){
-      if(hsbuf[0] == 'b'){
-	printf("Sent and received from arduino, finishing handshake\n");
-	fflush(stdout);
-	write(fd, "m", 1);
-	break;
+    while(1){
+      printf("Querying\n");
+      fflush(stdout);
+      if(read(fd[i], hsbuf, 1)){
+	if(hsbuf[i] == 'b'){
+	  printf("Sent and received from arduino, finishing handshake\n");
+	  fflush(stdout);
+	  write(fd[i], "m", 1);
+	  break;
+	}
       }
     }
   }
+
   
   csvappend(fpath, cols, colsiz, dat);
   csvappend(fpath, cols, colsiz, dat);
@@ -175,4 +175,5 @@ int main(){
   free(dat);
   free(fulltim);
   free(fullmsg);
+  free(fd);
 }
