@@ -6,6 +6,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
 #include "datareader.h"
 #include "filewriter.h"
 
@@ -74,14 +76,16 @@ int main(){
   
   char nmwrt = 1;
   int colsiz = 1;
+
+
   //=========================Reconstruct data=====================
   int k;
   int * fulltim = malloc(colsiz * sizeof(int));
   int * fullmsg = malloc(colsiz * sizeof(int));
-  for(k = 0; k < colsiz; k++){
-    fulltim[k] = 1;
-    fullmsg[k] = 2;
-  }
+
+  int * init = malloc(sizeof(int));
+  init[0] = 1;
+
   
   //=====================Real CSV Hours out here===================
   int cols = 2;
@@ -93,10 +97,10 @@ int main(){
   names[0] = "time";
   names[1] = "rpm";
 
-  dat[0] = fulltim;
-  dat[1] = fullmsg;
+  dat[0] = init;
+  dat[1] = init;
   
-  csvwrite(fpath, cols, colsiz, names, dat, nmwrt);
+  csvwrite(fpath, cols, 2, names, dat, nmwrt);
 
   printf("Welcome to SBMDAQ 1.0.0, please enter a value between 0-9 of the COM (windows) or TTYACM (Ubuntu/MAC) port that you will be utilizing:\n");
 
@@ -166,11 +170,115 @@ int main(){
     }
   }
 
+
+//=====================Data Collected=============
+  //strt
+  unsigned char * timfh = malloc(colsiz + 1);
+  unsigned char * timsh = malloc(colsiz + 1);
+  unsigned char * msgfh = malloc(colsiz + 1);
+  unsigned char * msgsh = malloc(colsiz + 1);
+
+  int tmr = 0;
+  int rsiz = 0;
+  int rtot = 0;
+
+  struct timespec tstart, tstop;
+  u_int64_t timediff;
   
-  csvappend(fpath, cols, colsiz, dat);
-  csvappend(fpath, cols, colsiz, dat);
-  csvappend(fpath, cols, colsiz, dat);
+  while(1){
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
+    //for(tmr = 0; tmr < colsiz; tmr++){
+      //printf("loop\n");
+
+    //  mpause(250);
+    //}
+    printf("Collecting\n");
+    fflush(stdout);
+    
+    rsiz = 0;
+    rtot = 0;
+    
+    timfh[colsiz + 1] = 0;
+    timsh[colsiz + 1] = 0;
+    msgfh[colsiz + 1] = 0;
+    msgsh[colsiz + 1] = 0;
+
+    rsiz = read(fd[0], timfh, colsiz);
+    rtot = rtot + rsiz;
+    while(rtot < colsiz){
+      //printf("rtot1:%d\n", rtot);
+      rtot = rtot + read(fd[0], &(timfh[rtot]), colsiz-rtot);
+    }
+    /* printf("timfh:"); */
+    /* for(k=0;k<colsiz;k++){ */
+    /*   printf(" %d", timfh[k]);  */
+    /* } */
+    /* printf("\n"); */
+
+    rtot = 0;
+    rsiz = read(fd[0], timsh, colsiz);
+    rtot = rtot+rsiz;
+    while(colsiz-rtot){
+      //printf("rtot2:%d\n", rtot);
+      rtot = rtot + read(fd[0], &(timsh[rtot]), colsiz-rtot);
+    }
+    /* printf("timsh:"); */
+    /* for(k=0;k<colsiz;k++){ */
+    /*   printf(" %d", timsh[k]);  */
+    /* } */
+    /* printf("\n"); */
+
+    rtot = 0;
+    rsiz = read(fd[0], msgfh, colsiz);
+    rtot = rtot+rsiz;
+    while(colsiz-rtot){
+      //printf("rtot3:%d\n", rtot);
+      rtot = rtot + read(fd[0], &(msgfh[rtot]), colsiz-rtot);
+    }
+    /* printf("msgfh:"); */
+    /* for(k=0;k<colsiz;k++){ */
+    /*   printf(" %d", msgfh[k]);  */
+    /* } */
+    /* printf("\n"); */
+
+    rtot = 0;
+    rsiz = read(fd[0], msgsh, colsiz);
+    rtot = rtot+rsiz;
+    while(colsiz-rtot){
+      //printf("rtot4:%d\n", rtot);
+      rtot = rtot + read(fd[0], &(msgsh[rtot]), colsiz-rtot);
+    }
+    /* printf("msgsh:"); */
+    /* for(k=0;k<colsiz;k++){ */
+    /*   printf(" %d", msgsh[k]);  */
+    /* } */
+    /* printf("\n"); */
+
+    //read(fd[0], timfh, colsiz);
+    //read(fd[0], timsh, colsiz);
+    //read(fd[0], msgfh, colsiz);
+    //read(fd[0], msgsh, colsiz);
+    
+    for(k = 0; k < colsiz; k++){
+      fulltim[k] = timfh[k] + timsh[k] *256;
+      fullmsg[k] = msgfh[k] + msgsh[k] *256;
+    }
+
+    dat[0] = fulltim;
+    dat[1] = fullmsg;
+    
+    csvappend(fpath, cols, colsiz, dat);
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
+    timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
+    printf("Time Taken: %lu\n", timediff);
+  }
   
+  free(timfh);
+  free(timsh);
+  free(msgfh);
+  free(msgsh);
+    
   free(names);
   free(dat);
   free(fulltim);
