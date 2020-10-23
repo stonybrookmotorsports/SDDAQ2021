@@ -7,6 +7,7 @@
 #include <string.h>
 #include "datareader.h"
 #include "filewriter.h"
+#include "aux.h"
 
 void csvwrite(char * fpath, int ncols, int dlen, char ** names, int ** data, char wrtnames){
   int fd = open(fpath, O_CREAT | O_APPEND | O_RDWR, 0644);

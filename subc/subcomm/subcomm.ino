@@ -4,7 +4,8 @@ const char trotor = 20;
 char tcount = 0;
 unsigned long ctim = 0;
 unsigned long lastim = 0;
-int tim[siz];
+byte senid[siz];
+unsigned long tim[siz];
 int msg[siz];
 boolean clct = true;
 boolean wrt = false;
@@ -79,10 +80,11 @@ void loop() {
   }
   if(clct){
     lastim = micros();    
-    tim[ctr] = (lastim - ctim) / 1000000;
+    tim[ctr] = (lastim - ctim) / 1000;
     //Serial.println("clct");
     //Serial.println(tim[ctr]);
     msg[ctr] = ictr;
+    senid[ctr] = 2;
     //Serial.println(msg[ctr]);
     ictr++;
     ctr++;
@@ -94,7 +96,11 @@ void loop() {
   }
   if(wrt){
     for (i = 0; i < siz; i++) {
-      Serial.write(tim[i]);
+      Serial.write(senid[i]);
+      //Serial.println(tim[i]);
+    }
+    for (i = 0; i < siz; i++) {
+      Serial.write(tim[i] % 256);
       //Serial.println(tim[i]);
     }
     Serial.flush();
@@ -104,7 +110,12 @@ void loop() {
     }
     Serial.flush();
     for (i = 0; i < siz; i++) {
-      Serial.write(msg[i]);
+      Serial.write((tim[i] / 256 / 256));
+      //Serial.println((tim[i]/256));
+    }
+    Serial.flush();
+    for (i = 0; i < siz; i++) {
+      Serial.write(msg[i] % 256);
       //Serial.println(msg[i]);
     }
     Serial.flush();
