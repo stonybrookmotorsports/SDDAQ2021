@@ -13,7 +13,7 @@
 #include "aux.h"
 
 /*=============================
-=============================*/
+  =============================*/
 int main(){
   //=====================Create Output File Name===================
   time_t current_time = time(NULL);
@@ -113,7 +113,6 @@ int main(){
     write(fd[i], "s", 1);  
   
     while(1){
-      printf("Querying\n");
       fflush(stdout);
       if(read(fd[i], hsbuf, 1)){
 	if(hsbuf[i] == 'b'){
@@ -127,7 +126,7 @@ int main(){
   }
 
 
-//=====================Data Collected=============
+  //=====================Data Collected=============
   //strt
   unsigned char * senid = malloc(colsiz + 1);
   unsigned char * timfh = malloc(colsiz + 1);
@@ -149,77 +148,80 @@ int main(){
 
   struct timespec tstart, tstop;
   u_int64_t timediff;
-  
+
   while(1){
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
-
-    printf("Collecting\n");
-    fflush(stdout);
+    for(i=0;i<numopen;i++){
     
-    rsiz = 0;
-    rtot = 0;
+      clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 
-    //===================BEGIN READING=====================
+      printf("Collecting from controller num \n");
+      fflush(stdout);
     
-    rsiz = read(fd[0], senid, colsiz);
-    rtot = rtot + rsiz;
-    while(rtot < colsiz){
-      rtot = rtot + read(fd[0], &(senid[rtot]), colsiz-rtot);
-    }
+      rsiz = 0;
+      rtot = 0;
 
-    rsiz = read(fd[0], timfh, colsiz);
-    rtot = rtot + rsiz;
-    while(rtot < colsiz){
-      rtot = rtot + read(fd[0], &(timfh[rtot]), colsiz-rtot);
-    }
-
-    rtot = 0;
-    rsiz = read(fd[0], timsh, colsiz);
-    rtot = rtot+rsiz;
-    while(colsiz-rtot){
-      rtot = rtot + read(fd[0], &(timsh[rtot]), colsiz-rtot);
-    }
-
-    rtot = 0;
-    rsiz = read(fd[0], timth, colsiz);
-    rtot = rtot+rsiz;
-    while(colsiz-rtot){
-      rtot = rtot + read(fd[0], &(timth[rtot]), colsiz-rtot);
-    }
-
-    rtot = 0;
-    rsiz = read(fd[0], msgfh, colsiz);
-    rtot = rtot+rsiz;
-    while(colsiz-rtot){
-      rtot = rtot + read(fd[0], &(msgfh[rtot]), colsiz-rtot);
-    }
-
-    rtot = 0;
-    rsiz = read(fd[0], msgsh, colsiz);
-    rtot = rtot+rsiz;
-    while(colsiz-rtot){
-      rtot = rtot + read(fd[0], &(msgsh[rtot]), colsiz-rtot);
-    }
-
-    //===================END READING=====================    
-
-    //===================BEGIN DATA RECONSTRUCTION===============
+      //===================BEGIN READING=====================
     
-    for(k = 0; k < colsiz; k++){
-      fulltim[k] = timfh[k] + timsh[k] *256 + timth[k] * 256 * 256;
-      fullsen[k] = senid[k];
-      fullmsg[k] = msgfh[k] + msgsh[k] *256;
-    }
+      rsiz = read(fd[i], senid, colsiz);
+      rtot = rtot + rsiz;
+      while(rtot < colsiz){
+	rtot = rtot + read(fd[i], &(senid[rtot]), colsiz-rtot);
+      }
 
-    dat[0] = fulltim;
-    dat[1] = fullsen;
-    dat[2] = fullmsg;
+      rsiz = read(fd[i], timfh, colsiz);
+      rtot = rtot + rsiz;
+      while(rtot < colsiz){
+	rtot = rtot + read(fd[i], &(timfh[rtot]), colsiz-rtot);
+      }
+
+      rtot = 0;
+      rsiz = read(fd[i], timsh, colsiz);
+      rtot = rtot+rsiz;
+      while(colsiz-rtot){
+	rtot = rtot + read(fd[i], &(timsh[rtot]), colsiz-rtot);
+      }
+
+      rtot = 0;
+      rsiz = read(fd[i], timth, colsiz);
+      rtot = rtot+rsiz;
+      while(colsiz-rtot){
+	rtot = rtot + read(fd[i], &(timth[rtot]), colsiz-rtot);
+      }
+
+      rtot = 0;
+      rsiz = read(fd[i], msgfh, colsiz);
+      rtot = rtot+rsiz;
+      while(colsiz-rtot){
+	rtot = rtot + read(fd[i], &(msgfh[rtot]), colsiz-rtot);
+      }
+
+      rtot = 0;
+      rsiz = read(fd[i], msgsh, colsiz);
+      rtot = rtot+rsiz;
+      while(colsiz-rtot){
+	rtot = rtot + read(fd[i], &(msgsh[rtot]), colsiz-rtot);
+      }
+
+      //===================END READING=====================    
+
+      //===================BEGIN DATA RECONSTRUCTION===============
     
-    csvappend(fpath, cols, colsiz, dat);
+      for(k = 0; k < colsiz; k++){
+	fulltim[k] = timfh[k] + timsh[k] *256 + timth[k] * 256 * 256;
+	fullsen[k] = senid[k];
+	fullmsg[k] = msgfh[k] + msgsh[k] *256;
+      }
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
-    timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
-    printf("Time Taken: %lu\n", timediff);
+      dat[0] = fulltim;
+      dat[1] = fullsen;
+      dat[2] = fullmsg;
+    
+      csvappend(fpath, cols, colsiz, dat);
+
+      clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
+      timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
+      printf("Time Taken: %lu\n", timediff);
+    }
   }
 
   //===================Free Allocated Memory===============

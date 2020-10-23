@@ -95,7 +95,17 @@ void loop() {
     }
   }
   if(wrt){
-    for (i = 0; i < siz; i++) {
+    datwrt();
+    ctr = 0;
+    wrt = false;
+    clct = true;  
+  }
+  delay(speriod);
+
+}
+
+void datwrt(){
+   for (i = 0; i < siz; i++) {
       Serial.write(senid[i]);
       //Serial.println(tim[i]);
     }
@@ -124,10 +134,4 @@ void loop() {
       //Serial.println((msg[i]/256));
     }
     Serial.flush();
-    ctr = 0;
-    wrt = false;
-    clct = true;  
-  }
-  delay(speriod);
-
 }
