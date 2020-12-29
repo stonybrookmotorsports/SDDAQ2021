@@ -72,7 +72,7 @@ int main(){
   pid_t pid;
   int status;
 
-  strcat(portname, "/dev/ttyACM");
+  strcat(portname, "/dev/ttyUSB");
   portname[12] = 0;
 
   //=====SCAN FOR ALL OPEN PORTS, ASSIGN FILE DESCRIPTORS====
@@ -113,9 +113,10 @@ int main(){
     write(fd[i], "s", 1);  
   
     while(1){
+      printf("stucc\n");
       fflush(stdout);
       if(read(fd[i], hsbuf, 1)){
-	if(hsbuf[i] == 'b'){
+	if(hsbuf[0] == 'b'){
 	  printf("Sent and received from arduino, finishing handshake\n");
 	  fflush(stdout);
 	  write(fd[i], "m", 1);
