@@ -1,5 +1,5 @@
 const long siz = 1;
-const int speriod = 125;
+const int speriod = 250;
 const char trotor = 20;
 char tcount = 0;
 unsigned long ctim = 0;
@@ -84,7 +84,7 @@ void loop() {
     //Serial.println("clct");
     //Serial.println(tim[ctr]);
     msg[ctr] = ictr;
-    senid[ctr] = 2;
+    senid[ctr] = 7;
     //Serial.println(msg[ctr]);
     ictr++;
     ctr++;

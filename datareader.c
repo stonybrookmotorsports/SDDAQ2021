@@ -78,7 +78,8 @@ int main(){
   //=====SCAN FOR ALL OPEN PORTS, ASSIGN FILE DESCRIPTORS====
   char c=48;
   int i=0;
-  char numopen = 0;
+  int j=0;
+  int numopen = 0;
   for(;i<10;i++){
     portname[11]=c+i;
     fdtests[i] = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
@@ -129,111 +130,153 @@ int main(){
 
   //=====================Data Collected=============
   //strt
-  unsigned char * senid = malloc(colsiz + 1);
-  unsigned char * timfh = malloc(colsiz + 1);
-  unsigned char * timsh = malloc(colsiz + 1);
-  unsigned char * timth = malloc(colsiz + 1);
-  unsigned char * msgfh = malloc(colsiz + 1);
-  unsigned char * msgsh = malloc(colsiz + 1);
+  int packsize = 6;
+  
+  unsigned char * databuf = malloc(colsiz*packsize*numopen+1);
+  unsigned char * dummybuf = malloc(colsiz*packsize+1);
 
-  senid[colsiz + 1] = 0;
-  timfh[colsiz + 1] = 0;
-  timsh[colsiz + 1] = 0;
-  timth[colsiz + 1] = 0;
-  msgfh[colsiz + 1] = 0;
-  msgsh[colsiz + 1] = 0;
+  
+  for(i=0;i<numopen*(colsiz*packsize+1);i++){
+    databuf[i]=0;
+  }
+
+  for(i=0;i<colsiz*packsize+1;i++){
+    dummybuf[i] = 0;
+  }
   
   int tmr = 0;
-  int rsiz = 0;
-  int rtot = 0;
 
+  int * readsiz = malloc(sizeof(int)*(numopen+1));
+  int * readtot = malloc(sizeof(int)*(numopen+1));
+
+  for(i=0;i<numopen+1;i++){
+    readsiz[i]=0;
+    readtot[i]=0;
+  }
+  
   struct timespec tstart, tstop;
   u_int64_t timediff;
 
   while(1){
+    //read once from all streams
     for(i=0;i<numopen;i++){
-    
       clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
-
-      printf("Collecting from controller num \n");
       fflush(stdout);
+
+      //printf("Startread\n");
+      
+      /* for(k=0;k<numopen;k++){ */
+      /* 	printf("i: %d, k: %d, databuf:", i,k); */
+      /* 	for(j=0;j<packsize;j++){ */
+      /* 	  printf("%d, ",databuf[k*colsiz*packsize+j]); */
+      /* 	} */
+      /* 	for(j=0;j<packsize;j++){ */
+      /* 	  printf("%p, ", &(databuf[k*colsiz*packsize+j])); */
+      /* 	} */
+      /* 	printf("\n"); */
+      /* } */
+      /* printf("\n"); */
+
+      //printf("packsize: %d, p*c-r: %d\n",packsize*colsiz,packsize*colsiz-readtot[i]);         
+      //printf("for controller %d, readtot: %d, readsiz: %d\n",i,readtot[i],readsiz[i]);
+      readsiz[i] = read(fd[i], dummybuf, packsize*colsiz-readtot[i]);
+
+      //printf("for controller %d, readtot: %d, readsiz: %d\n",i,readtot[i],readsiz[i]);
+
+      if(readsiz[i]>0){
+	for(k=0;k<readsiz[i];k++){
+	  databuf[i*packsize*colsiz+k+readtot[i]] = dummybuf[k];
+	}
+	readtot[i] = readtot[i] + readsiz[i];
+      }
+
+      //printf("for controller %d, readtot: %d, readsiz: %d\n",i,readtot[i],readsiz[i]);
+
+      /*
+      for(k=0;k<numopen;k++){
+	printf("i: %d, k: %d, databuf:", i,k);
+	for(j=0;j<packsize;j++){
+	  printf("%d, ",databuf[k*colsiz*packsize+j]);
+	}
+	printf("\n");
+      }
+      printf("\n");
+      */
+
+      if(packsize*colsiz-readtot[i] == 0){
+	//printf("Storing data from controller %d \n", i);	
+	fullsen[0] = databuf[i*colsiz*packsize]+i;
+	fulltim[0] = databuf[i*colsiz*packsize+1] + databuf[i*colsiz*packsize+2] *256 + databuf[i*colsiz*packsize+3] * 256 * 256;
+	fullmsg[0] = databuf[i*colsiz*packsize+4] + databuf[i*colsiz*packsize+5] *256;
+	  
+	  
+	dat[0] = fulltim;
+	dat[1] = fullsen;
+	dat[2] = fullmsg;
     
-      rsiz = 0;
-      rtot = 0;
+	csvappend(fpath, cols, colsiz, dat);
 
-      //===================BEGIN READING=====================
-    
-      rsiz = read(fd[i], senid, colsiz);
-      rtot = rtot + rsiz;
-      while(rtot < colsiz){
-	rtot = rtot + read(fd[i], &(senid[rtot]), colsiz-rtot);
-      }
-
-      rsiz = read(fd[i], timfh, colsiz);
-      rtot = rtot + rsiz;
-      while(rtot < colsiz){
-	rtot = rtot + read(fd[i], &(timfh[rtot]), colsiz-rtot);
-      }
-
-      rtot = 0;
-      rsiz = read(fd[i], timsh, colsiz);
-      rtot = rtot+rsiz;
-      while(colsiz-rtot){
-	rtot = rtot + read(fd[i], &(timsh[rtot]), colsiz-rtot);
-      }
-
-      rtot = 0;
-      rsiz = read(fd[i], timth, colsiz);
-      rtot = rtot+rsiz;
-      while(colsiz-rtot){
-	rtot = rtot + read(fd[i], &(timth[rtot]), colsiz-rtot);
-      }
-
-      rtot = 0;
-      rsiz = read(fd[i], msgfh, colsiz);
-      rtot = rtot+rsiz;
-      while(colsiz-rtot){
-	rtot = rtot + read(fd[i], &(msgfh[rtot]), colsiz-rtot);
-      }
-
-      rtot = 0;
-      rsiz = read(fd[i], msgsh, colsiz);
-      rtot = rtot+rsiz;
-      while(colsiz-rtot){
-	rtot = rtot + read(fd[i], &(msgsh[rtot]), colsiz-rtot);
-      }
-
-      //===================END READING=====================    
-
-      //===================BEGIN DATA RECONSTRUCTION===============
-    
-      for(k = 0; k < colsiz; k++){
-	fulltim[k] = timfh[k] + timsh[k] *256 + timth[k] * 256 * 256;
-	fullsen[k] = senid[k];
-	fullmsg[k] = msgfh[k] + msgsh[k] *256;
-      }
-
-      dat[0] = fulltim;
-      dat[1] = fullsen;
-      dat[2] = fullmsg;
-    
-      csvappend(fpath, cols, colsiz, dat);
-
-      clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
-      timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
-      printf("Time Taken: %lu\n", timediff);
+	//for(j=0;j<(packsize*colsiz);j++){
+	//  databuf[i][j]=0;
+	//}
+	readsiz[i]=0;
+	readtot[i]=0;	
+      }  
+  
     }
+
+    
+    //if the reading buffer was full, write the data, reset read total to 0
+    /*
+    for(i=0;i<numopen;i++){
+      if(packsize*colsiz-readtot[i] == 0){
+	printf("Storing data from controller %d \n", i);	
+	//for(k = 0; k < colsiz; k++){
+       	//printf("senid:%d\n", databuf[i][k]);
+	fullsen[0] = databuf[i][0]+i;
+	fulltim[0] = databuf[i][1] + databuf[i][2] *256 + databuf[i][3] * 256 * 256;
+	fullmsg[0] = databuf[i][4] + databuf[i][5] *256;
+	  //}
+	  
+	  
+	dat[0] = fulltim;
+	dat[1] = fullsen;
+	dat[2] = fullmsg;
+    
+	csvappend(fpath, cols, colsiz, dat);
+
+	for(j=0;j<(packsize*colsiz);j++){
+	  databuf[i][j]=0;
+	}
+
+	//
+	for(j=0;j<colsiz;j++){
+	  fullsen[j]=0;
+	  fulltim[j]=0;
+	  fullmsg[j]=0;
+	}
+	//
+	
+	readtot[i]=0;
+	
+      }
+    }
+    */
+    
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
+    timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
+    //printf("Time Taken: %lu\n", timediff);
+
   }
 
   //===================Free Allocated Memory===============
   
-  free(timfh);
-  free(timsh);
-  free(msgfh);
-  free(msgsh);
-    
   free(names);
   free(dat);
+  free(databuf);
+  free(readtot);
+  free(readsiz);
+  free(fullsen);
   free(fulltim);
   free(fullmsg);
   free(fd);
