@@ -88,6 +88,19 @@ int main(){
       numopen = numopen + 1;
     }
   }
+
+  portname[8]='A';
+  portname[9]='C';
+  portname[10]='M';
+  for(i=0;i<10;i++){
+    portname[11]=c+i;
+    fdtests[i] = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+    if(fdtests[i]>0){
+      fd[numopen]=fdtests[i];
+      numopen = numopen + 1;
+    }
+  }
+    
   
   if(!numopen){
     printf("Error in scanning for ports, exiting program\n");
@@ -166,7 +179,7 @@ int main(){
 
       //reconstruct and store the data
       if(packsize*colsiz-readtot[i] == 0){
-	fullsen[0] = databuf[i*colsiz*packsize]+i;
+	fullsen[0] = databuf[i*colsiz*packsize]+i*100;
 	fulltim[0] = databuf[i*colsiz*packsize+1] + databuf[i*colsiz*packsize+2] *256 + databuf[i*colsiz*packsize+3] * 256 * 256;
 	fullmsg[0] = databuf[i*colsiz*packsize+4] + databuf[i*colsiz*packsize+5] *256;
 	dat[0] = fulltim;
