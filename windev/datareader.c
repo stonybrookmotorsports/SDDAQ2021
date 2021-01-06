@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include "datareader.h"
 #include "filewriter.h"
 #include "aux.h"
@@ -66,7 +67,6 @@ int main(){
   int * fd = malloc(10*sizeof(int));
   int wlen;
   int exec = 0;
-  pid_t pid;
   int status;
 
   strcat(portname, "COM");
@@ -97,7 +97,7 @@ int main(){
 
   //================Setup Serial Comms With Subcontrollers=======--==
   for(i=0;i<numopen;i++){
-    configtty(fd[i], B115200);
+    configtty(fd[i], 115200);
   }
   
   //======================Start Handshake=================
@@ -145,13 +145,10 @@ int main(){
     readtot[i]=0;
   }
   
-  struct timespec tstart, tstop;
-  u_int64_t timediff;
 
   while(1){
     //read once from all streams
     for(i=0;i<numopen;i++){
-      clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
       fflush(stdout);
 
       readsiz[i] = read(fd[i], &(databuf[i*packsize*colsiz+readtot[i]]), packsize*colsiz-readtot[i]);
@@ -176,8 +173,6 @@ int main(){
 	readtot[i]=0;	
       }  
     }    
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tstop);
-    timediff = (tstop.tv_sec-tstart.tv_sec)*1000000 + (tstop.tv_nsec-tstart.tv_nsec)/1000;
     //printf("Time Taken: %lu\n", timediff);
 
   }
