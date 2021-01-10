@@ -1,5 +1,5 @@
-all: datareader.o filewriter.o aux.o
-	gcc -o main datareader.o filewriter.o aux.o -lm
+all: datareader.o filewriter.o auxf.o
+	gcc -o main datareader.o filewriter.o auxf.o -lm
 
 datareader.o: datareader.c datareader.h
 	gcc -c datareader.c
@@ -7,8 +7,8 @@ datareader.o: datareader.c datareader.h
 filewriter.o: filewriter.c filewriter.h
 	gcc -c filewriter.c
 
-aux.o: aux.c aux.h
-	gcc -c aux.c
+aux.o: auxf.c auxf.h
+	gcc -c auxf.c
 
 run: all
 	./main
