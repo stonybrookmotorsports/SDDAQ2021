@@ -16,22 +16,16 @@ char i = 0;
 void setup() {
   Serial.begin(115200);
   //pinMode(LED_BUILTIN, OUTPUT);
-
   for (ctr = 0; ctr < siz; ctr++) {
     tim[ctr] = 1;
     msg[ctr] = 1;
   }
-
   ctr = 0;
-
-
   //digitalWrite(LED_BUILTIN, LOW);
   delay(500);
   //digitalWrite(LED_BUILTIN, HIGH);
   delay(500);
   //digitalWrite(LED_BUILTIN, LOW);
-  
-
   while (1) {
     if (Serial.available() > 0) {
       if (Serial.read() == 's') {
@@ -40,25 +34,20 @@ void setup() {
       }
     }
   }
-
   //digitalWrite(LED_BUILTIN, HIGH);
-
-
   while (1) {
-
     if (Serial.available() > 0) {
       if (Serial.read() == 'm') {
+        Serial.write(speriod % 256);
+        Serial.write(speriod / 256);
+        Serial.write(siz);
         break;
       }
     }
   }
-
-
   ctim = micros();
   lastim = micros();
-
 }
-
 void loop() {
   if (Serial.available() > 0) {
     if (Serial.read() == 's') {
@@ -67,6 +56,9 @@ void loop() {
     while (1) {
       if (Serial.available() > 0) {
         if (Serial.read() == 'm') {
+          Serial.write(speriod % 256);
+          Serial.write(speriod / 256);
+          Serial.write(siz);
           ictr = 0;
           ctr = 0;
           ctim = micros();
@@ -78,8 +70,9 @@ void loop() {
       }
     }
   }
+  //collecting data
   if(clct){
-    lastim = micros();    
+    lastim = micros();
     tim[ctr] = (lastim - ctim) / 1000;
     //Serial.println("clct");
     //Serial.println(tim[ctr]);
@@ -98,40 +91,17 @@ void loop() {
     datwrt();
     ctr = 0;
     wrt = false;
-    clct = true;  
+    clct = true;
   }
   delay(speriod);
-
 }
-
 void datwrt(){
    for (i = 0; i < siz; i++) {
       Serial.write(senid[i]);
-      //Serial.println(tim[i]);
-    }
-    for (i = 0; i < siz; i++) {
       Serial.write(tim[i] % 256);
-      //Serial.println(tim[i]);
-    }
-    Serial.flush();
-    for (i = 0; i < siz; i++) {
       Serial.write((tim[i] / 256));
-      //Serial.println((tim[i]/256));
-    }
-    Serial.flush();
-    for (i = 0; i < siz; i++) {
       Serial.write((tim[i] / 256 / 256));
-      //Serial.println((tim[i]/256));
-    }
-    Serial.flush();
-    for (i = 0; i < siz; i++) {
       Serial.write(msg[i] % 256);
-      //Serial.println(msg[i]);
-    }
-    Serial.flush();
-    for (i = 0; i < siz; i++) {
       Serial.write((msg[i] / 256));
-      //Serial.println((msg[i]/256));
     }
-    Serial.flush();
 }
