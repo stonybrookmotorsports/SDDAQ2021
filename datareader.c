@@ -122,6 +122,21 @@ int main(){
   mpause(999);
   mpause(999);
 
+  //++++From here to next comment with pluses is almost useless, only here to make the windows and ubuntu arduino code uniform
+  unsigned char * speriod = malloc(3);
+  speriod[0] = 0;
+  speriod[1] = 0;
+  speriod[2] = 0;
+
+  int * periods = malloc(sizeof(int)*(numopen + 1));
+
+  unsigned char * numsen = malloc(2);
+  numsen[0] = 0;
+  numsen[1] = 0;
+
+  int * sens = malloc(sizeof(int)*(numopen + 1));
+  //++++End of useless code  
+
   for(i=0;i<numopen;i++){
     printf("Init Handshake %d\n", i);
     write(fd[i], "s", 1);  
@@ -134,6 +149,14 @@ int main(){
 	  printf("Sent and received from arduino, finishing handshake\n");
 	  fflush(stdout);
 	  write(fd[i], "m", 1);
+
+	  mpause(500);
+	  read(fd[i], speriod, 2);
+	  read(fd[i], numsen, 1);
+	  periods[i] = speriod[0] + speriod[1] * 256;
+	  sens[i] = numsen[0];
+	  printf("%d: period: %d sens: %d:\n", i, periods[i], sens[i]);
+	  
 	  break;
 	}
       }
@@ -177,6 +200,20 @@ int main(){
 	readtot[i] = readtot[i] + readsiz[i];
       }
 
+      /*
+      printf("%d readsiz: %d readtot: %d\n", i, readsiz[i], readtot[i]);
+
+      for(k=0;k<numopen;k++){
+	printf("i: %d, k: %d, databuf:", i,k);
+	for(j=0;j<packsize;j++){
+	  printf("%d, ",databuf[k*sens[k]*packsize+j]);
+	}
+	printf("\n");
+      }
+      //printf("\n");
+      */
+
+      
       //reconstruct and store the data
       if(packsize*colsiz-readtot[i] == 0){
 	fullsen[0] = databuf[i*colsiz*packsize]+i*100;

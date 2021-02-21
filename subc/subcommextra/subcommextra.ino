@@ -20,7 +20,6 @@
 //  sentim();
 //
 //For the first line, set it equal to a reading function, such as analogRead().
-//The first line can have extra lines where necessary, such as Wire.beginTransmission() or Wire.endTransmission().
 //For the second line, set a unique and arbitrary sensor ID for each sensor, note it down for testing.
 //For the third line, do not change anything, and make sure to always call it.
 //For a given reading, the three lines MUST be in order. The sentim() call can't come before.
@@ -31,16 +30,17 @@
 //  senid[ctr] = 3;
 //  sentim();
 //
-//Make sure you have these three (or more if adjusted) lines repeated for each sensor.
-//If you have 3 sensors, you should have 3 chunks of code.
+//Make sure you have these three lines repeated for each sensor.
+//If you have 3 sensors, you should have nine lines total.
 //Lastly, you can remove the code that is currently in that section.
 //
 //================END OF EDITING INSTRUCTIONS=============
 
+#include <Wire.h>
 
 //+++++++++++++++++++++++UPDATE THESE TWO ONLY+++++++++++++++++++++++++
-const long siz = 1; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
-const int speriod = 125; //PUT THE TIME BETWEEN EACH READ GROUP HERE
+const long siz = 10; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
+const int speriod = 50; //PUT THE TIME BETWEEN EACH READ GROUP HERE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //========VARIABLE DECLARATION==========
@@ -54,13 +54,20 @@ boolean wrt = false; //Boolean for writing data
 char ctr = 0; //Counter for number of sensor of which have been read from
 int ictr = 0; //Counter for total number of reads
 char i = 0; //Iterator
+unsigned char buf[2];
+byte wirectr = 0;
+//byte LEDP = 4;
+byte poten = 2;
 
 void setup() {
   Serial.begin(115200);
 
   //+++++++++++++++++++PINMODE DECLARATIONS+++++++++++++++++++
   //pinMode(LED_BUILTIN, OUTPUT);
-
+  //Wire.begin();        // join i2c bus (address optional for master)  
+  buf[0] = 0;
+  buf[1] = 0;
+  //pinMode(LEDP, OUTPUT);
   //++++++++++++++++END OF PINMODE DECLARATIONS+++++++++++++++
 
   //Initialize the array
@@ -69,11 +76,11 @@ void setup() {
     msg[ctr] = 1;
   }
   ctr = 0;
-  //digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
-  //digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  //digitalWrite(LED_BUILTIN, LOW);
+  //digitalWrite(LEDP, LOW);
+  //delay(500);
+  //digitalWrite(LEDP, HIGH);
+  //delay(500);
+  //digitalWrite(LEDP, LOW);
   while (1) {
     if (Serial.available() > 0) {
       if (Serial.read() == 's') {
@@ -82,9 +89,9 @@ void setup() {
       }
     }
   }
-  //digitalWrite(LED_BUILTIN, HIGH);
+  //digitalWrite(LEDP, HIGH);
 
-  //========HANDSHAKE=========
+  //========HANDSHAKE=========`
   while (1) {
     if (Serial.available() > 0) {
       if (Serial.read() == 'm') {
@@ -102,6 +109,8 @@ void setup() {
 
 void loop() {
   //New handshake incase connection to main controller is lost
+
+  /*
   if (Serial.available() > 0) {
     if (Serial.read() == 's') {
       Serial.write('b');
@@ -123,14 +132,55 @@ void loop() {
       }
     }
   }
+  
+  */
   //=============DATA COLLECTION============
   //If the buffers are not full, clct should be true, data is read
+  //digitalWrite(LEDP, LOW);
   if(clct){
 
     //++++++++++++++++++++++++DATA READINGS+++++++++++++++++++++++++++
-    msg[ctr] = ictr;
-    senid[ctr] = 3;
+    msg[ctr] = analogRead(poten);
+    senid[ctr] = 5;
     sentim();
+
+    //Serial.println("Here");
+
+    for(int itor = 0; itor < 9; itor++){
+      msg[ctr] = 15+itor;
+      senid[ctr] = 6+itor;
+      sentim();
+    }
+    
+    //Wire.requestFrom(8, 2);    // request 6 bytes from slave device #8
+
+
+    //while(1){
+      //while (Wire.available()) { // slave may send less than requested
+        //Serial.println(wirectr);
+      //  buf[wirectr] = Wire.read(); // receive a byte as character
+      //  wirectr++;
+      //  buf[wirectr] = Wire.read(); // receive a byte as character
+      //}
+      
+      //if(wirectr>1){
+      //  wirectr=0;
+      //  break;
+      //}
+    //}
+    //wirectr = 0;
+    //msg[ctr] = buf[0]+256*buf[1];
+    //senid[ctr] = 12;
+    //sentim();
+    /*
+    */
+
+    /*
+    msg[ctr] = ictr;
+    senid[ctr] = 12;
+    sentim();
+    */
+        
     //+++++++++++++++++++++++END DATA READING+++++++++++++++++++++++++
 
     //If the buffer is full, write the data
@@ -148,20 +198,45 @@ void loop() {
     wrt = false;
     clct = true;
   }
+
+  //delay(speriod/2);
+  //digitalWrite(LEDP, HIGH);
+  //delay(speriod/2);
   delay(speriod);
 }
 
 
 //This function is responsible for writing the data
 void datwrt(){
+   //digitalWrite(LEDP, HIGH);
+         //Serial.println("writing");
    for (i = 0; i < siz; i++) {
+      
       Serial.write(senid[i]);
       Serial.write(tim[i] % 256);
       Serial.write((tim[i] / 256));
       Serial.write((tim[i] / 256 / 256));
       Serial.write(msg[i] % 256);
       Serial.write((msg[i] / 256));
-    }
+      /**/
+      /*
+      Serial.print("ictr: ");
+      Serial.println(ictr);
+      Serial.println(senid[i]);
+      Serial.println(tim[i]);
+      Serial.println(msg[i]);
+
+      /*
+      Serial.println((unsigned char)(senid[i]));
+      Serial.println((unsigned char)(tim[i] % 256));
+      Serial.println((unsigned char)(tim[i] / 256));
+      Serial.println((unsigned char)(tim[i] / 256 / 256));
+      Serial.println((unsigned char)(msg[i] % 256));
+      Serial.println((unsigned char)(msg[i] / 256));
+      /*
+      */
+  }
+     //digitalWrite(LEDP, LOW);
 }
 
 //This function sets the time of the reading and increments the counter
