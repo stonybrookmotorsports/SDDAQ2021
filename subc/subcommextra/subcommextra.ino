@@ -39,7 +39,7 @@
 #include <Wire.h>
 
 //+++++++++++++++++++++++UPDATE THESE TWO ONLY+++++++++++++++++++++++++
-const long siz = 10; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
+const long siz = 20; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
 const int speriod = 50; //PUT THE TIME BETWEEN EACH READ GROUP HERE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -146,7 +146,7 @@ void loop() {
 
     //Serial.println("Here");
 
-    for(int itor = 0; itor < 9; itor++){
+    for(int itor = 0; itor < 19; itor++){
       msg[ctr] = 15+itor;
       senid[ctr] = 6+itor;
       sentim();

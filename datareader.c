@@ -187,6 +187,8 @@ int main(){
   struct timespec tstart, tstop;
   u_int64_t timediff;
 
+  printf("startcollect");
+  
   while(1){
     //read once from all streams
     for(i=0;i<numopen;i++){

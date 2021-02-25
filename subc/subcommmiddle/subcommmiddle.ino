@@ -37,11 +37,23 @@
 //================END OF EDITING INSTRUCTIONS=============
 
 #include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
+
 
 //+++++++++++++++++++++++UPDATE THESE TWO ONLY+++++++++++++++++++++++++
-const long siz = 21; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
+const long siz = 23; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
 const int speriod = 50; //PUT THE TIME BETWEEN EACH READ GROUP HERE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+//========IMU VARIABLES========
+//uint16_t imudelay = speriod;
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+
+
+//=============================
 
 //========VARIABLE DECLARATION==========
 unsigned long ctim = 0; //Start time variable
@@ -57,14 +69,14 @@ char i = 0; //Iterator
 unsigned char buf[2];
 byte wirectr = 0;
 //byte LEDP = 4;
-byte phores = 4;
+byte poten = 2;
 
 void setup() {
   Serial.begin(115200);
-
+  bno.begin();
   //+++++++++++++++++++PINMODE DECLARATIONS+++++++++++++++++++
   //pinMode(LED_BUILTIN, OUTPUT);
-  Wire.begin();        // join i2c bus (address optional for master)  
+  //Wire.begin();        // join i2c bus (address optional for master)  
   buf[0] = 0;
   buf[1] = 0;
   //pinMode(LEDP, OUTPUT);
@@ -140,42 +152,93 @@ void loop() {
   if(clct){
 
     //++++++++++++++++++++++++DATA READINGS+++++++++++++++++++++++++++
-    msg[ctr] = analogRead(phores);
-    //msg[ctr] = 5;
-    senid[ctr] = 3;
-    sentim();
+    //msg[ctr] = analogRead(poten);
+    //senid[ctr] = 5;
+    //sentim();
 
-    //msg[ctr] = analogRead(phores);
-    
-    for(int itor = 0; itor < 19; itor++){
-      msg[ctr] = 5+itor;
-      senid[ctr] = 3+itor;
-      sentim();
-    }
-    
     //Serial.println("Here");
 
+    sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
+    bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+    bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+    bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+    bno.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
+  
+    writeEvent(&orientationData, 1);
+    writeEvent(&angVelocityData, 4);
+    writeEvent(&linearAccelData, 7);
+    writeEvent(&magnetometerData, 10);
+    writeEvent(&accelerometerData, 13);
+    writeEvent(&gravityData, 16);
+  
+    int8_t boardTemp = bno.getTemp();
+    //Serial.println();
+    //Serial.print(F("temperature: "));
+    //Serial.println(boardTemp);
+    msg[ctr] = boardTemp;
+    senid[ctr] = 19;
+    sentim();
+
+  
+    uint8_t system, gyro, accel, mag = 0;
+    bno.getCalibration(&system, &gyro, &accel, &mag);
+    //Serial.println();
+    msg[ctr] = system;
+    senid[ctr] = 20;
+    sentim();
+    msg[ctr] = gyro;
+    senid[ctr] = 21;
+    sentim();
+    msg[ctr] = accel;
+    senid[ctr] = 22;
+    sentim();
+    msg[ctr] = mag;
+    senid[ctr] = 23;
+    sentim();
+
+    /*
+    Serial.print("Calibration: Sys=");
+    Serial.print(system);
+    Serial.print(" Gyro=");
+    Serial.print(gyro);
+    Serial.print(" Accel=");
+    Serial.print(accel);
+    Serial.print(" Mag=");
+    Serial.println(mag);
+  
+    Serial.println("--");
+    */
+
+    /*
+    for(int itor = 0; itor < 19; itor++){
+      msg[ctr] = 15+itor;
+      senid[ctr] = 6+itor;
+      sentim();
+    }
+    */
     
-    Wire.requestFrom(8, 2);    // request 6 bytes from slave device #8
+    //Wire.requestFrom(8, 2);    // request 6 bytes from slave device #8
 
 
     //while(1){
-      while (Wire.available()) { // slave may send less than requested
+      //while (Wire.available()) { // slave may send less than requested
         //Serial.println(wirectr);
-        buf[wirectr] = Wire.read(); // receive a byte as character
-        wirectr++;
-        buf[wirectr] = Wire.read(); // receive a byte as character
-      }
+      //  buf[wirectr] = Wire.read(); // receive a byte as character
+      //  wirectr++;
+      //  buf[wirectr] = Wire.read(); // receive a byte as character
+      //}
       
       //if(wirectr>1){
       //  wirectr=0;
       //  break;
       //}
     //}
-    wirectr = 0;
-    msg[ctr] = buf[0]+256*buf[1];
-    senid[ctr] = 12;
-    sentim();
+    //wirectr = 0;
+    //msg[ctr] = buf[0]+256*buf[1];
+    //senid[ctr] = 12;
+    //sentim();
     /*
     */
 
@@ -247,6 +310,62 @@ void datwrt(){
 void sentim(){
     lastim = micros();
     tim[ctr] = (lastim - ctim) / 1000;
-    //ictr++;
+    ictr++;
     ctr++;
+}
+
+//THIS FUNCTION IS PROVIDED BY THE ADAFRUIT BNO055 EXAMPLES AND WAS WRITTEN BY THEM
+//THIS FUNCTION SPECFICALLY COMES FROM "read_all_data.ino"
+
+void writeEvent(sensors_event_t* event, byte senidn) {
+  double x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem
+  if (event->type == SENSOR_TYPE_ACCELEROMETER) {
+    //Serial.print("Accl:");
+    x = event->acceleration.x;
+    y = event->acceleration.y;
+    z = event->acceleration.z;
+  }
+  else if (event->type == SENSOR_TYPE_ORIENTATION) {
+    //Serial.print("Orient:");
+    x = event->orientation.z;
+    y = event->orientation.y;
+    z = event->orientation.x;
+  }
+  else if (event->type == SENSOR_TYPE_MAGNETIC_FIELD) {
+    //Serial.print("Mag:");
+    x = event->magnetic.x;
+    y = event->magnetic.y;
+    z = event->magnetic.z;
+  }
+  else if (event->type == SENSOR_TYPE_GYROSCOPE) {
+    //Serial.print("Gyro:");
+    x = event->gyro.x;
+    y = event->gyro.y;
+    z = event->gyro.z;
+  }
+  else if (event->type == SENSOR_TYPE_ROTATION_VECTOR) {
+    //Serial.print("Rot:");
+    x = event->gyro.x;
+    y = event->gyro.y;
+    z = event->gyro.z;
+  }
+  else if (event->type == SENSOR_TYPE_LINEAR_ACCELERATION) {
+    //Serial.print("Linear:");
+    x = event->acceleration.x;
+    y = event->acceleration.y;
+    z = event->acceleration.z;
+  }
+  else {
+    //Serial.print("Unk:");
+  }
+
+  msg[ctr] = (int)(x*100);
+  senid[ctr] = senidn;
+  sentim();
+  msg[ctr] = (int)(y*100);
+  senid[ctr] = senidn+1;
+  sentim();
+  msg[ctr] = (int)(z*100);
+  senid[ctr] = senidn+2;
+  sentim();
 }
