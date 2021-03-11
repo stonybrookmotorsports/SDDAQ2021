@@ -40,7 +40,7 @@
 
 //+++++++++++++++++++++++UPDATE THESE TWO ONLY+++++++++++++++++++++++++
 const long siz = 2; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
-const int speriod = 50; //PUT THE TIME BETWEEN EACH READ GROUP HERE
+const int speriod = 250; //PUT THE TIME BETWEEN EACH READ GROUP HERE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //========VARIABLE DECLARATION==========
@@ -217,22 +217,23 @@ void datwrt(){
    //digitalWrite(LEDP, HIGH);
          //Serial.println("writing");
    for (i = 0; i < siz; i++) {
-      
+
+      /*
       Serial.write(senid[i]);
       Serial.write(tim[i] % 256);
       Serial.write((tim[i] / 256));
       Serial.write((tim[i] / 256 / 256));
       Serial.write(msg[i] % 256);
       Serial.write((msg[i] / 256));
+      */
       /**/
-      /*
       Serial.print("ictr: ");
       Serial.println(ictr);
       Serial.println(senid[i]);
       Serial.println(tim[i]);
       Serial.println(msg[i]);
-
-      /*
+      
+      //Serial.println("Startsend");
       Serial.println((unsigned char)(senid[i]));
       Serial.println((unsigned char)(tim[i] % 256));
       Serial.println((unsigned char)(tim[i] / 256));

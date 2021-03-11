@@ -15,11 +15,11 @@
 //For the editing loop:
 //Each sensor reading must use the following three lines:
 //
-//  msg[ctr] = {SOME READ FUNCTION};
+//  msg[ctr] = {SOME READ FUNCTION OR VALUE};
 //  senid[ctr] = {ARBITRARY SENSOR ID ASSIGNED BY YOU};
 //  sentim();
 //
-//For the first line, set it equal to a reading function, such as analogRead().
+//For the first line, set it equal to a reading function, such as analogRead(), or a value.
 //For the second line, set a unique and arbitrary sensor ID for each sensor, note it down for testing.
 //For the third line, do not change anything, and make sure to always call it.
 //For a given reading, the three lines MUST be in order. The sentim() call can't come before.
@@ -31,7 +31,9 @@
 //  sentim();
 //
 //Make sure you have these three lines repeated for each sensor.
-//If you have 3 sensors, you should have nine lines total.
+//If you have 3 sensors, you should have nine lines total at least
+//If you need, you can add additional code required to obtain values
+//Note that whatever you do, it is important those three lines exist.
 //Lastly, you can remove the code that is currently in that section.
 //
 //================END OF EDITING INSTRUCTIONS=============
@@ -152,12 +154,12 @@ void loop() {
   if(clct){
 
     //++++++++++++++++++++++++DATA READINGS+++++++++++++++++++++++++++
-    //msg[ctr] = analogRead(poten);
-    //senid[ctr] = 5;
-    //sentim();
-
     //Serial.println("Here");
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //From here until the next tilde (~) comment line, the code is adapted from
+    //the adafruit "read_all_data" example file in the BN0O55 example library. 
+    //The specific lines are 56-69, 71
     sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
     bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
@@ -174,16 +176,16 @@ void loop() {
     writeEvent(&gravityData, 16);
   
     int8_t boardTemp = bno.getTemp();
-    //Serial.println();
-    //Serial.print(F("temperature: "));
-    //Serial.println(boardTemp);
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    
     msg[ctr] = boardTemp;
     senid[ctr] = 19;
     sentim();
 
   
-    uint8_t system, gyro, accel, mag = 0;
-    bno.getCalibration(&system, &gyro, &accel, &mag);
+    uint8_t system, gyro, accel, mag = 0; //This is from line 76 of the example
+    bno.getCalibration(&system, &gyro, &accel, &mag); //This is from line 77 of the example
     //Serial.println();
     msg[ctr] = system;
     senid[ctr] = 20;
@@ -210,43 +212,6 @@ void loop() {
   
     Serial.println("--");
     */
-
-    /*
-    for(int itor = 0; itor < 19; itor++){
-      msg[ctr] = 15+itor;
-      senid[ctr] = 6+itor;
-      sentim();
-    }
-    */
-    
-    //Wire.requestFrom(8, 2);    // request 6 bytes from slave device #8
-
-
-    //while(1){
-      //while (Wire.available()) { // slave may send less than requested
-        //Serial.println(wirectr);
-      //  buf[wirectr] = Wire.read(); // receive a byte as character
-      //  wirectr++;
-      //  buf[wirectr] = Wire.read(); // receive a byte as character
-      //}
-      
-      //if(wirectr>1){
-      //  wirectr=0;
-      //  break;
-      //}
-    //}
-    //wirectr = 0;
-    //msg[ctr] = buf[0]+256*buf[1];
-    //senid[ctr] = 12;
-    //sentim();
-    /*
-    */
-
-    /*
-    msg[ctr] = ictr;
-    senid[ctr] = 12;
-    sentim();
-    */
         
     //+++++++++++++++++++++++END DATA READING+++++++++++++++++++++++++
 
@@ -269,7 +234,7 @@ void loop() {
   //delay(speriod/2);
   //digitalWrite(LEDP, HIGH);
   //delay(speriod/2);
-  delay(speriod);
+  delay(speriod-10);
 }
 
 
@@ -286,7 +251,7 @@ void datwrt(){
       Serial.write(msg[i] % 256);
       Serial.write((msg[i] / 256));
       /**/
-      /*
+      /*=====These commented out sections are here for debugging======
       Serial.print("ictr: ");
       Serial.println(ictr);
       Serial.println(senid[i]);
@@ -315,7 +280,7 @@ void sentim(){
 }
 
 //THIS FUNCTION IS PROVIDED BY THE ADAFRUIT BNO055 EXAMPLES AND WAS WRITTEN BY THEM
-//THIS FUNCTION SPECFICALLY COMES FROM "read_all_data.ino"
+//THIS FUNCTION SPECFICALLY COMES FROM "read_all_data.ino", LINES 92-132
 
 void writeEvent(sensors_event_t* event, byte senidn) {
   double x = -1000000, y = -1000000 , z = -1000000; //dumb values, easy to spot problem

@@ -9,6 +9,10 @@
 #include "filewriter.h"
 #include "aux.h"
 
+/*=============================================================
+csvwrite() creates a csv file (or appends to it), and writes various data arrays to it. This function is specifically used in the initial creation of the csv file and writes the column names, as well as 1's for each of the first values.
+=============================================================*/
+
 void csvwrite(char * fpath, int ncols, int dlen, char ** names, int ** data, char wrtnames){
   int fd = open(fpath, O_CREAT | O_APPEND | O_RDWR, 0644);
   int i = 0;
@@ -48,7 +52,8 @@ void csvwrite(char * fpath, int ncols, int dlen, char ** names, int ** data, cha
 }
 
 /*===========================
-csvappend appends data onto an existing csv
+csvappend() appends data onto an existing csv. 
+csvappend() only writes data, and does not work to put in the column headers
 ===========================*/
 void csvappend(char * fpath, int ncols, int dlen, int ** data){
   int fd = open(fpath, O_CREAT | O_APPEND | O_RDWR, 0644);
@@ -74,10 +79,18 @@ void csvappend(char * fpath, int ncols, int dlen, int ** data){
   free(stmp);
   close(fd);  
 }
-  
+
+
+/*==================================================
+These following functions are deprecated. They were primarily used to test writing data to CSV files. 
+ezwrite() was used to test writing. 
+zeropopulate() would populate an integer array with zeros, 
+linpopulate() would populate an integer array with the value i, where i is the index of said element.
+Of note, these functions are primarily carry-over from the first attempt that Christopher "Red" Sherling made at sending data from an arduino to a computer/RPi and storing it as a CSV. These initial attempts occured during the 2018-2019 school year.
+  =================================================*/
 void ezwrite(char * fpath, int ncols){
   int fd = open(fpath, O_CREAT | O_TRUNC | O_RDWR, 0644);
-  write(fd, "yeet", 4);
+  write(fd, "test", 4);
   close(fd);  
 }
 

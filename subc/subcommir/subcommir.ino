@@ -37,6 +37,8 @@
 //================END OF EDITING INSTRUCTIONS=============
 
 #include <Wire.h>
+#include <Adafruit_MLX90614.h>
+
 
 //+++++++++++++++++++++++UPDATE THESE TWO ONLY+++++++++++++++++++++++++
 const long siz = 2; //PUT THE NUMBER OF SENSORS YOU'LL BE READING HERE
@@ -44,6 +46,7 @@ const int speriod = 50; //PUT THE TIME BETWEEN EACH READ GROUP HERE
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //========VARIABLE DECLARATION==========
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 unsigned long ctim = 0; //Start time variable
 unsigned long lastim = 0; //Last time variable
 byte senid[siz]; //Buffer for sensor IDs
@@ -61,12 +64,12 @@ byte phores = 4;
 
 void setup() {
   Serial.begin(115200);
-
+  mlx.begin();  
   //+++++++++++++++++++PINMODE DECLARATIONS+++++++++++++++++++
   //pinMode(LED_BUILTIN, OUTPUT);
-  Wire.begin();        // join i2c bus (address optional for master)  
-  buf[0] = 0;
-  buf[1] = 0;
+  //Wire.begin();        // join i2c bus (address optional for master)  
+  //buf[0] = 0;
+  //buf[1] = 0;
   //pinMode(LEDP, OUTPUT);
   //++++++++++++++++END OF PINMODE DECLARATIONS+++++++++++++++
 
@@ -140,10 +143,10 @@ void loop() {
   if(clct){
 
     //++++++++++++++++++++++++DATA READINGS+++++++++++++++++++++++++++
-    msg[ctr] = analogRead(phores);
+    //msg[ctr] = analogRead(phores);
     //msg[ctr] = 5;
-    senid[ctr] = 3;
-    sentim();
+    //senid[ctr] = 3;
+    //sentim();
 
     //msg[ctr] = analogRead(phores);
 
@@ -156,28 +159,21 @@ void loop() {
     */
     
     //Serial.println("Here");
-
-    
-    Wire.requestFrom(8, 2);    // request 6 bytes from slave device #8
-
-
-    //while(1){
-      while (Wire.available()) { // slave may send less than requested
-        //Serial.println(wirectr);
-        buf[wirectr] = Wire.read(); // receive a byte as character
-        wirectr++;
-        buf[wirectr] = Wire.read(); // receive a byte as character
-      }
-      
+     
       //if(wirectr>1){
       //  wirectr=0;
       //  break;
       //}
     //}
-    wirectr = 0;
-    msg[ctr] = buf[0]+256*buf[1];
-    senid[ctr] = 12;
+    //wirectr = 0;
+    msg[ctr] = (int)(mlx.readAmbientTempC() * 100);
+    senid[ctr] = 7;
     sentim();
+
+    msg[ctr] = (int)(mlx.readObjectTempC() * 100);
+    senid[ctr] = 9;
+    sentim();
+
     /*
     */
 
@@ -217,6 +213,7 @@ void datwrt(){
    //digitalWrite(LEDP, HIGH);
          //Serial.println("writing");
    for (i = 0; i < siz; i++) {
+
       
       Serial.write(senid[i]);
       Serial.write(tim[i] % 256);
@@ -231,15 +228,15 @@ void datwrt(){
       Serial.println(senid[i]);
       Serial.println(tim[i]);
       Serial.println(msg[i]);
-
-      /*
+      
+      *//*
       Serial.println((unsigned char)(senid[i]));
       Serial.println((unsigned char)(tim[i] % 256));
       Serial.println((unsigned char)(tim[i] / 256));
       Serial.println((unsigned char)(tim[i] / 256 / 256));
       Serial.println((unsigned char)(msg[i] % 256));
       Serial.println((unsigned char)(msg[i] / 256));
-      /*
+      *//*
       */
   }
      //digitalWrite(LEDP, LOW);

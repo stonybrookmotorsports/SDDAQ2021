@@ -23,6 +23,8 @@ void mpause(int millis){
 
 /*=============================
 configtty sets up the connection to the USB ports. A file descriptor fd of the port file, and the baudrate br (passed as B######, so B115200 for example) sets the read rate. 
+
+A number of the options here are chosen as recommended for serial ports. These recommendations can be found here: https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
 =============================*/
 int configtty(int fd, int br){
   struct termios tty;
