@@ -15,11 +15,11 @@
 //For the editing loop:
 //Each sensor reading must use the following three lines:
 //
-//  msg[ctr] = {SOME READ FUNCTION};
+//  msg[ctr] = {SOME READ FUNCTION OR VALUE};
 //  senid[ctr] = {ARBITRARY SENSOR ID ASSIGNED BY YOU};
 //  sentim();
 //
-//For the first line, set it equal to a reading function, such as analogRead().
+//For the first line, set it equal to a reading function, such as analogRead(), or a value.
 //For the second line, set a unique and arbitrary sensor ID for each sensor, note it down for testing.
 //For the third line, do not change anything, and make sure to always call it.
 //For a given reading, the three lines MUST be in order. The sentim() call can't come before.
@@ -31,7 +31,9 @@
 //  sentim();
 //
 //Make sure you have these three lines repeated for each sensor.
-//If you have 3 sensors, you should have nine lines total.
+//If you have 3 sensors, you should have nine lines total at least
+//If you need, you can add additional code required to obtain values
+//Note that whatever you do, it is important those three lines exist.
 //Lastly, you can remove the code that is currently in that section.
 //
 //================END OF EDITING INSTRUCTIONS=============
@@ -219,7 +221,7 @@ void datwrt(){
       Serial.write(msg[i] % 256);
       Serial.write((msg[i] / 256));
       /**/
-      /*
+      /*=====These commented out sections are here for debugging======
       Serial.print("ictr: ");
       Serial.println(ictr);
       Serial.println(senid[i]);
