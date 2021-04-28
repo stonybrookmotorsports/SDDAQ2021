@@ -48,6 +48,7 @@ void csvwrite(char * fpath, int ncols, int dlen, char ** names, int ** data, cha
   }  
 
   free(stmp);
+  fsync(fd);
   close(fd);  
 }
 
