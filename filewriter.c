@@ -78,6 +78,7 @@ void csvappend(char * fpath, int ncols, int dlen, int ** data){
   }  
 
   free(stmp);
+  fsync(fd);
   close(fd);  
 }
 
